@@ -1,8 +1,8 @@
 #ifndef _sip_dialog_h_
 #define _sip_dialog_h_
 
-#include "sip-message.h"
 #include "sip-header.h"
+#include "sys/atomic.h"
 #include "cstring.h"
 #include "list.h"
 #include <stdint.h>
@@ -16,6 +16,8 @@ enum {
 	DIALOG_CONFIRMED,
 };
 
+struct sip_agent_t;
+struct sip_message_t;
 struct sip_dialog_t
 {
 	int state; // DIALOG_ERALY/DIALOG_CONFIRMED
@@ -38,19 +40,28 @@ struct sip_dialog_t
 	// internal use only
 	void* session; // user-defined session
 	struct list_head link;
-	uint8_t* ptr;
+	char* ptr;
 	int32_t ref;
 };
 
-struct sip_dialog_t* sip_dialog_create(const struct sip_message_t* msg);
+struct sip_dialog_t* sip_dialog_create(void);
+int sip_dialog_release(struct sip_dialog_t* dialog);
+int sip_dialog_addref(struct sip_dialog_t* dialog);
+    
+int sip_dialog_init_uac(struct sip_dialog_t* dialog, const struct sip_message_t* msg);
+int sip_dialog_init_uas(struct sip_dialog_t* dialog, const struct sip_message_t* msg);
 
-int sip_dialog_setremotetag(struct sip_dialog_t* dialog, const struct cstring_t* tag);
+int sip_dialog_setlocaltag(struct sip_dialog_t* dialog, const struct cstring_t* tag);
+int sip_dialog_target_refresh(struct sip_dialog_t* dialog, const struct sip_message_t* msg);
 
 // dialog management
-int sip_dialog_add(struct sip_dialog_t* dialog);
-int sip_dialog_remove(struct sip_dialog_t* dialog);
-struct sip_dialog_t* sip_dialog_find(const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote);
-struct list_head* sip_dialog_root();
+int sip_dialog_add(struct sip_agent_t* sip, struct sip_dialog_t* dialog);
+int sip_dialog_remove(struct sip_agent_t* sip, struct sip_dialog_t* dialog);
+
+/// call sip_dialog_release
+struct sip_dialog_t* sip_dialog_fetch(struct sip_agent_t* sip, const struct cstring_t* callid, const struct cstring_t* local, const struct cstring_t* remote);
+
+struct sip_dialog_t* sip_dialog_fetch_or_add(struct sip_agent_t* sip, const struct sip_message_t* msg);
 
 #if defined(__cplusplus)
 }

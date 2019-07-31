@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-uint8_t* cstring_clone(uint8_t* ptr, const uint8_t* end, struct cstring_t* clone, const char* s, size_t n)
+char* cstring_clone(char* ptr, const char* end, struct cstring_t* clone, const char* s, size_t n)
 {
 	size_t remain;
 	remain = end - ptr;
@@ -17,26 +17,26 @@ uint8_t* cstring_clone(uint8_t* ptr, const uint8_t* end, struct cstring_t* clone
 	return ptr;
 }
 
-uint8_t* sip_uri_clone(uint8_t* ptr, const uint8_t* end, struct sip_uri_t* clone, const struct sip_uri_t* uri)
+char* sip_uri_clone(char* ptr, const char* end, struct sip_uri_t* clone, const struct sip_uri_t* uri)
 {
 	int n, r;
 	n = sip_uri_write(uri, ptr, end);
 	r = sip_header_uri(ptr, ptr + n, clone);
-	return 0 == r ? ptr + n : end;
+	return 0 == r ? ptr + n : (char*)end;
 }
 
-uint8_t* sip_via_clone(uint8_t* ptr, const uint8_t* end, struct sip_via_t* clone, const struct sip_via_t* via)
+char* sip_via_clone(char* ptr, const char* end, struct sip_via_t* clone, const struct sip_via_t* via)
 {
 	int n, r;
 	n = sip_via_write(via, ptr, end);
 	r = sip_header_via(ptr, ptr + n, clone);
-	return 0 == r ? ptr + n : end;
+	return 0 == r ? ptr + n : (char*)end;
 }
 
-uint8_t* sip_contact_clone(uint8_t* ptr, const uint8_t* end, struct sip_contact_t* clone, const struct sip_contact_t* contact)
+char* sip_contact_clone(char* ptr, const char* end, struct sip_contact_t* clone, const struct sip_contact_t* contact)
 {
 	int n, r;
 	n = sip_contact_write(contact, ptr, end);
 	r = sip_header_contact(ptr, ptr + n, clone);
-	return 0 == r ? ptr + n : end;
+	return 0 == r ? ptr + n : (char*)end;
 }

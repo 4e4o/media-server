@@ -10,7 +10,7 @@ struct rtsp_server_t* rtsp_server_create(const char ip[65], unsigned short port,
 {
 	struct rtsp_server_t* rtsp;
 
-	rtsp = (struct rtsp_server_t *)malloc(sizeof(struct rtsp_server_t));
+	rtsp = (struct rtsp_server_t *)calloc(1, sizeof(struct rtsp_server_t));
 	if (NULL == rtsp) return NULL;
 
 	snprintf(rtsp->ip, sizeof(rtsp->ip), "%s", ip);
@@ -40,18 +40,13 @@ int rtsp_server_destroy(struct rtsp_server_t* rtsp)
 int rtsp_server_input(struct rtsp_server_t* rtsp, const void* data, size_t* bytes)
 {
 	int r;
-	size_t remain;
-
-	remain = *bytes;
-	r = http_parser_input(rtsp->parser, data, &remain);
+	r = http_parser_input(rtsp->parser, data, bytes);
 	assert(r <= 2); // 1-need more data
 	if (0 == r)
 	{
 		r = rtsp_server_handle(rtsp);
 		http_parser_clear(rtsp->parser); // reset parser
 	}
-
-	*bytes = remain;
 	return r;
 }
 

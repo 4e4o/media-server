@@ -41,6 +41,14 @@ static void rtsp_session_ondestroy(void* param)
 		session->rtsp = NULL;
 	}
 
+	if (session->rtp.data)
+	{
+		assert(session->rtp.capacity > 0);
+		free(session->rtp.data);
+		session->rtp.data = NULL;
+		session->rtp.capacity = 0;
+	}
+
 #if defined(_DEBUG) || defined(DEBUG)
 	memset(session, 0xCC, sizeof(*session));
 #endif
@@ -76,7 +84,7 @@ static void rtsp_session_onrecv(void* param, int code, size_t bytes)
 				{
 					// TODO: pipeline remain data
 					assert(bytes > remain);
-					assert(0 == remain);
+					assert(0 == remain || '$' == *(end - remain));
 				}
 				p = end - remain;
 			}
