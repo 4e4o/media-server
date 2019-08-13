@@ -246,7 +246,7 @@ int mov_writer_write_l(struct mov_writer_t* writer, int track, const void* data_
 		bytes += 4;
 	}else{
 		nalu_size_ptr = data_in;
-		data_ptr = data_in + 4;
+		data_ptr = (void *)data_in + 4;
 	}
 	if (track < 0 || track >= (int)writer->mov.track_count)
 		return -ENOENT;
