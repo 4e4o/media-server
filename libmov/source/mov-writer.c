@@ -235,7 +235,7 @@ int mov_writer_write_l(struct mov_writer_t* writer, int track, const void* data_
 	const void *data_ptr;
 	char nalu_size_buf[4];
 	if(!with_nalu_size){
-		//不带4个字节的nalu_size,那么我们自己生成
+		//Without four bytes of nalu_size, we generate it ourselves
 		nalu_size_buf[0] = (uint8_t)((bytes >> 24) & 0xFF);
 		nalu_size_buf[1] = (uint8_t)((bytes >> 16) & 0xFF);
 		nalu_size_buf[2] = (uint8_t)((bytes >> 8) & 0xFF);
@@ -246,7 +246,7 @@ int mov_writer_write_l(struct mov_writer_t* writer, int track, const void* data_
 		bytes += 4;
 	}else{
 		nalu_size_ptr = data_in;
-		data_ptr = (void *)data_in + 4;
+		data_ptr = (char *)data_in + 4;
 	}
 	if (track < 0 || track >= (int)writer->mov.track_count)
 		return -ENOENT;
