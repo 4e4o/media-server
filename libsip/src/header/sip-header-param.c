@@ -119,20 +119,13 @@ int sip_params_find_double(const struct sip_params_t* params, const char* name, 
 
 int sip_param_write(const struct sip_param_t* param, char* data, const char* end)
 {
-	char* p;
 	if (!cstrvalid(&param->name))
 		return -1;
 
-	p = data;
-	if (p < end) p += cstrcpy(&param->name, p, end - p);
-	
 	if (cstrvalid(&param->value))
-	{
-		if (p < end) *p++ = '=';
-		if (p < end) p += cstrcpy(&param->value, p, end - p);
-	}
-
-	return p - data;
+		return snprintf(data, end - data, "%.*s=%.*s", (int)param->name.n, param->name.p, (int)param->value.n, param->value.p);
+	else
+		return snprintf(data, end - data, "%.*s", (int)param->name.n, param->name.p);
 }
 
 int sip_params_write(const struct sip_params_t* params, char* data, const char* end, char sep)
