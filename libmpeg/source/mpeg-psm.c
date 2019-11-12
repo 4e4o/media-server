@@ -1,5 +1,5 @@
 // ITU-T H.222.0(10/2014)
-// Information technology ¨C Generic coding of moving pictures and associated audio information: Systems
+// Information technology ï¿½C Generic coding of moving pictures and associated audio information: Systems
 // 2.5.4 Program stream map(p82)
 
 #include "mpeg-ps-proto.h"
@@ -19,7 +19,7 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	uint16_t element_stream_map_length;
 	uint16_t element_stream_info_length;
 
-	// Table 2-41 ¨C Program stream map(p79)
+	// Table 2-41 ï¿½C Program stream map(p79)
 	assert(0x00==data[0] && 0x00==data[1] && 0x01==data[2] && 0xBC==data[3]);
 	program_stream_map_length = (data[4] << 8) | data[5];
 
@@ -74,13 +74,13 @@ size_t psm_read(struct psm_t *psm, const uint8_t* data, size_t bytes)
 	}
 
 //	assert(j+4 == program_stream_map_length+6);
-	assert(0 == mpeg_crc32(0xffffffff, data, program_stream_map_length+6));
+//	assert(0 == mpeg_crc32(0xffffffff, data, program_stream_map_length+6));
 	return program_stream_map_length+6;
 }
 
 size_t psm_write(const struct psm_t *psm, uint8_t *data)
 {
-	// Table 2-41 ¨C Program stream map(p79)
+	// Table 2-41 ï¿½C Program stream map(p79)
 
 	size_t i,j;
 	unsigned int crc;
