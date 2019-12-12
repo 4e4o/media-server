@@ -7,7 +7,7 @@
 #include <assert.h>
 
 extern "C" const struct mov_buffer_t* mov_file_buffer(void);
-extern "C" void h264_annexb_nalu(const void* h264, size_t bytes, void(*handler)(void* param, const void* nalu, size_t bytes), void* param);
+extern "C" void mpeg4_h264_annexb_nalu(const void* h264, size_t bytes, void(*handler)(void* param, const void* nalu, size_t bytes), void* param);
 
 #define H264_NAL(v)	(v & 0x1F)
 
@@ -52,12 +52,12 @@ static void h264_handler(void* param, const void* nalu, size_t bytes)
 	struct mov_h264_test_t* ctx = (struct mov_h264_test_t*)param;
 	assert(ctx->ptr < nalu);
 
-	int vcl = 0;
+	int vcl = 0, update = 0;
 	const uint8_t* end = (const uint8_t*)nalu + bytes;
 	uint8_t nalutype = (*(uint8_t*)nalu) & 0x1f;
 	if (1 <= nalutype && nalutype <= 5)
 	{
-		int n = h264_annexbtomp4(&ctx->avc, ctx->ptr, end - ctx->ptr, s_buffer, sizeof(s_buffer), &vcl);
+		int n = h264_annexbtomp4(&ctx->avc, ctx->ptr, end - ctx->ptr, s_buffer, sizeof(s_buffer), &vcl, &update);
 
 		if (ctx->track < 0)
 		{
@@ -103,7 +103,7 @@ void mov_writer_h264(const char* h264, int width, int height, const char* mp4)
 
 	FILE* fp = fopen(mp4, "wb+");
 	ctx.mov = mov_writer_create(mov_file_buffer(), fp, MOV_FLAG_FASTSTART);
-	h264_annexb_nalu(ptr, bytes, h264_handler, &ctx);
+	mpeg4_h264_annexb_nalu(ptr, bytes, h264_handler, &ctx);
 	mov_writer_destroy(ctx.mov);
 
 	fclose(fp);
