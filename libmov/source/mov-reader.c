@@ -51,7 +51,7 @@ static int mov_read_free(struct mov_t* mov, const struct mov_box_t* box)
 static int mov_index_build(struct mov_track_t* track)
 {
 	void* p;
-	size_t i, j;
+	uint32_t i, j;
 	struct mov_stbl_t* stbl = &track->stbl;
 
 	if (stbl->stss_count > 0 || MOV_VIDEO != track->handler_type)
@@ -172,6 +172,7 @@ static int mov_read_default(struct mov_t* mov, const struct mov_box_t* box)
 }
 
 static struct mov_parse_t s_mov_parse_table[] = {
+	{ MOV_TAG('a', 'v', '1', 'C'), MOV_NULL, mov_read_av1c }, // av1-isobmff
 	{ MOV_TAG('a', 'v', 'c', 'C'), MOV_NULL, mov_read_avcc }, // ISO/IEC 14496-15:2010(E) avcC
 	{ MOV_TAG('b', 't', 'r', 't'), MOV_NULL, mov_read_btrt }, // ISO/IEC 14496-15:2010(E) 5.3.4.1.1 Definition
 	{ MOV_TAG('c', 'o', '6', '4'), MOV_STBL, mov_read_stco },
@@ -484,7 +485,7 @@ int mov_reader_getinfo(struct mov_reader_t* reader, struct mov_reader_trackinfo_
 
 uint64_t mov_reader_getduration(struct mov_reader_t* reader)
 {
-	return reader->mov.mvhd.duration * 1000 / reader->mov.mvhd.timescale;
+	return 0 != reader->mov.mvhd.timescale ? reader->mov.mvhd.duration * 1000 / reader->mov.mvhd.timescale : 0;
 }
 
 #define DIFF(a, b) ((a) > (b) ? ((a) - (b)) : ((b) - (a)))

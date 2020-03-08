@@ -41,9 +41,10 @@ static size_t mov_write_moov(struct mov_t* mov)
 void mov_write_size(const struct mov_t* mov, uint64_t offset, size_t size)
 {
 	uint64_t offset2;
+    assert(size < UINT32_MAX);
 	offset2 = mov_buffer_tell(&mov->io);
 	mov_buffer_seek(&mov->io, offset);
-	mov_buffer_w32(&mov->io, size);
+	mov_buffer_w32(&mov->io, (uint32_t)size);
 	mov_buffer_seek(&mov->io, offset2);
 }
 
@@ -250,6 +251,9 @@ int mov_writer_write_l(struct mov_writer_t* writer, int track, const void* data_
 		nalu_size_ptr = data_in;
 		data_ptr = (char *)data_in + 4;
 	}
+
+    assert(bytes < UINT32_MAX);
+
 	if (track < 0 || track >= (int)writer->mov.track_count)
 		return -ENOENT;
 	
@@ -269,7 +273,7 @@ int mov_writer_write_l(struct mov_writer_t* writer, int track, const void* data_
 
 	sample = &mov->track->samples[mov->track->sample_count++];
 	sample->sample_description_index = 1;
-	sample->bytes = bytes;
+	sample->bytes = (uint32_t)bytes;
 	sample->flags = flags;
     sample->data = NULL;
 	sample->pts = pts;

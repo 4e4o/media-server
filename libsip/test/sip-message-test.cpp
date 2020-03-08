@@ -23,7 +23,7 @@ static struct sip_message_t* req2sip(const char* req)
 	msg = sip_message_create(SIP_MESSAGE_REQUEST);
 
 	size_t n = strlen(req);
-	http_parser_t* parser = http_parser_create(HTTP_PARSER_SERVER);
+	http_parser_t* parser = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 	assert(0 == http_parser_input(parser, req, &n) && 0 == n);
 	assert(0 == sip_message_load(msg, parser));
 	http_parser_destroy(parser);
@@ -36,7 +36,7 @@ static struct sip_message_t* reply2sip(const char* reply)
 	msg = sip_message_create(SIP_MESSAGE_REPLY);
 
 	size_t n = strlen(reply);
-	http_parser_t* parser = http_parser_create(HTTP_PARSER_CLIENT);
+	http_parser_t* parser = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
 	assert(0 == http_parser_input(parser, reply, &n) && 0 == n);
 	assert(0 == sip_message_load(msg, parser));
 	http_parser_destroy(parser);
@@ -126,13 +126,13 @@ static int sip_uac_transport_via(void* transport, const char* destination, char 
 
 static int sip_uac_transport_send(void* transport, const void* data, size_t bytes)
 {
-	printf("%.*s\n", bytes, (const char*)data);
+	printf("%.*s\n", (int)bytes, (const char*)data);
 	return 0;
 }
 
 static int sip_uas_send(void* param, const struct cstring_t* url, const void* data, int bytes)
 {
-	printf("==> %.*s\n%.*s\n", url->n, url->p, bytes, (const char*)data);
+	printf("==> %.*s\n%.*s\n", (int)url->n, url->p, (int)bytes, (const char*)data);
 	return 0;
 }
 

@@ -972,7 +972,7 @@ static int sip_uac_onregister(void* param, const struct sip_message_t* reply, st
 		h = sip_message_get_header_by_name(reply, "Call-ID");
 		if (h)
 		{
-			snprintf(test->callid, sizeof(test->callid), "%.*s", h->n, h->p);
+			snprintf(test->callid, sizeof(test->callid), "%.*s", (int)h->n, h->p);
 			h = sip_message_get_header_by_name(reply, "CSeq");
 			test->cseq = atoi(h->p);
 		}
@@ -1071,8 +1071,8 @@ static int sip_uac_test_process(struct sip_uac_test2_t* test)
 	http_parser_t* request;
 	http_parser_t* response;
 
-	request = http_parser_create(HTTP_PARSER_CLIENT);
-	response = http_parser_create(HTTP_PARSER_SERVER);
+	request = http_parser_create(HTTP_PARSER_RESPONSE, NULL, NULL);
+	response = http_parser_create(HTTP_PARSER_REQUEST, NULL, NULL);
 
     do
     {

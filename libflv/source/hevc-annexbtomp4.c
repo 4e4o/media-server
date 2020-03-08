@@ -6,6 +6,8 @@
 #define H265_NAL_SPS		33
 #define H265_NAL_PPS		34
 #define H265_NAL_AUD		35
+#define H265_NAL_SEI_PREFIX	39
+#define H265_NAL_SEI_SUFFIX	40
 
 #define MAX(x, y) ((x) > (y) ? (x) : (y))
 
@@ -20,16 +22,16 @@ struct h265_annexbtomp4_handle_t
 	int* vcl;
 
 	uint8_t* out;
-	size_t bytes;
-	size_t capacity;
+	int bytes;
+	int capacity;
 };
 
-void mpeg4_h264_annexb_nalu(const void* h264, size_t bytes, void(*handler)(void* param, const void* nalu, size_t bytes), void* param);
-uint8_t mpeg4_h264_read_ue(const uint8_t* data, size_t bytes, size_t* offset);
+void mpeg4_h264_annexb_nalu(const void* h264, int bytes, void(*handler)(void* param, const uint8_t* nalu, int bytes), void* param);
+uint8_t mpeg4_h264_read_ue(const uint8_t* data, int bytes, int* offset);
 
-static size_t hevc_rbsp_decode(const uint8_t* nalu, size_t bytes, uint8_t* sodb)
+static int hevc_rbsp_decode(const uint8_t* nalu, int bytes, uint8_t* sodb)
 {
-	size_t i, j;
+	int i, j;
 	for (j = i = 0; i < bytes; i++)
 	{
 		if (i + 2 < bytes && 0 == nalu[i] && 0 == nalu[i + 1] && 0x03 == nalu[i + 2])
@@ -46,9 +48,9 @@ static size_t hevc_rbsp_decode(const uint8_t* nalu, size_t bytes, uint8_t* sodb)
 	return j;
 }
 
-static int hevc_profile_tier_level(const uint8_t* nalu, size_t bytes, uint8_t maxNumSubLayersMinus1, struct mpeg4_hevc_t* hevc)
+static int hevc_profile_tier_level(const uint8_t* nalu, int bytes, uint8_t maxNumSubLayersMinus1, struct mpeg4_hevc_t* hevc)
 {
-	size_t n;
+	int n;
 	uint8_t i;
 	uint8_t sub_layer_profile_present_flag[8];
 	uint8_t sub_layer_level_present_flag[8];
@@ -99,9 +101,9 @@ static int hevc_profile_tier_level(const uint8_t* nalu, size_t bytes, uint8_t ma
 	return bytes < n ? n : -1;
 }
 
-static uint8_t hevc_vps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr)
+static uint8_t hevc_vps_id(const uint8_t* rbsp, int bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr)
 {
-	size_t sodb;
+	int sodb;
 	uint8_t vps;
 	uint8_t vps_max_sub_layers_minus1;
 	uint8_t vps_temporal_id_nesting_flag;
@@ -120,10 +122,10 @@ static uint8_t hevc_vps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_
 	return vps;
 }
 
-static uint8_t hevc_sps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, uint8_t* vps)
+static uint8_t hevc_sps_id(const uint8_t* rbsp, int bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, uint8_t* vps)
 {
-	size_t n;
-	size_t sodb;
+	int n;
+	int sodb;
 	uint8_t sps;
 	uint8_t sps_max_sub_layers_minus1;
 	uint8_t sps_temporal_id_nesting_flag;
@@ -163,13 +165,13 @@ static uint8_t hevc_sps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_
 	return sps;
 }
 
-static uint8_t hevc_pps_id(const uint8_t* rbsp, size_t bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, uint8_t* sps)
+static uint8_t hevc_pps_id(const uint8_t* rbsp, int bytes, struct mpeg4_hevc_t* hevc, uint8_t* ptr, uint8_t* sps)
 {
 	// TODO:
 	//mp4->hevc->parallelismType; // entropy_coding_sync_enabled_flag
 
-	size_t sodb;
-	size_t offset = 2 * 8;  // 2-nalu type
+	int sodb;
+	int offset = 2 * 8;  // 2-nalu type
 	sodb = hevc_rbsp_decode(rbsp, bytes, ptr);
 	if (sodb < 3)
 		return 0xFF;
@@ -236,7 +238,7 @@ static int mpeg4_hevc_add(struct h265_annexbtomp4_handle_t* mp4, uint8_t type, c
 	return 0;
 }
 
-static int h265_vps_copy(struct h265_annexbtomp4_handle_t* mp4, const uint8_t* nalu, size_t bytes)
+static int h265_vps_copy(struct h265_annexbtomp4_handle_t* mp4, const uint8_t* nalu, int bytes)
 {
 	int i;
 	uint8_t vpsid;
@@ -258,7 +260,7 @@ static int h265_vps_copy(struct h265_annexbtomp4_handle_t* mp4, const uint8_t* n
 	return mpeg4_hevc_add(mp4, H265_NAL_VPS, nalu, bytes);
 }
 
-static int h265_sps_copy(struct h265_annexbtomp4_handle_t* mp4, const uint8_t* nalu, size_t bytes)
+static int h265_sps_copy(struct h265_annexbtomp4_handle_t* mp4, const uint8_t* nalu, int bytes)
 {
 	int i;
 	uint8_t spsid;
@@ -281,7 +283,7 @@ static int h265_sps_copy(struct h265_annexbtomp4_handle_t* mp4, const uint8_t* n
 	return mpeg4_hevc_add(mp4, H265_NAL_SPS, nalu, bytes);
 }
 
-static int h265_pps_copy(struct h265_annexbtomp4_handle_t* mp4, const uint8_t* nalu, size_t bytes)
+static int h265_pps_copy(struct h265_annexbtomp4_handle_t* mp4, const uint8_t* nalu, int bytes)
 {
 	int i;
 	uint8_t ppsid;
@@ -304,7 +306,28 @@ static int h265_pps_copy(struct h265_annexbtomp4_handle_t* mp4, const uint8_t* n
 	return mpeg4_hevc_add(mp4, H265_NAL_PPS, nalu, bytes);
 }
 
-static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
+static int h265_sei_clear(struct h265_annexbtomp4_handle_t* mp4)
+{
+	int i;
+	struct mpeg4_hevc_t* hevc;
+	hevc = mp4->hevc;
+
+	for (i = 0; i < hevc->numOfArrays; i++)
+	{
+		if (H265_NAL_SEI_PREFIX == hevc->nalu[i].type || H265_NAL_SEI_SUFFIX == hevc->nalu[i].type)
+		{
+			mpeg4_hevc_remove(hevc, hevc->nalu[i].data, hevc->nalu[i].bytes, mp4->hevcptr);
+			mp4->hevcptr -= mp4->hevc->nalu[i].bytes;
+			if(i + 1 < hevc->numOfArrays)
+				memmove(mp4->hevc->nalu + i, mp4->hevc->nalu + i + 1, sizeof(mp4->hevc->nalu[0]) * (hevc->numOfArrays - i - 1));
+			--hevc->numOfArrays;
+			--i;
+		}
+	}
+	return 0;
+}
+
+static void hevc_handler(void* param, const uint8_t* nalu, int bytes)
 {
 	uint8_t nalutype;
 	struct h265_annexbtomp4_handle_t* mp4;
@@ -314,6 +337,7 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 	switch (nalutype)
 	{
 	case H265_NAL_VPS:
+		h265_sei_clear(mp4); // remove all prefix/suffix sei
 		h265_vps_copy(mp4, nalu, bytes);
 		break;
 
@@ -324,6 +348,16 @@ static void hevc_handler(void* param, const uint8_t* nalu, size_t bytes)
 	case H265_NAL_PPS:
 		h265_pps_copy(mp4, nalu, bytes);
 		break;
+
+#if defined(H265_FILTER_SEI)
+	case H265_NAL_SEI_PREFIX:
+		mpeg4_hevc_add(mp4, H265_NAL_SEI_PREFIX, nalu, bytes);
+		break;
+
+	case H265_NAL_SEI_SUFFIX:
+		mpeg4_hevc_add(mp4, H265_NAL_SEI_SUFFIX, nalu, bytes);
+		break;
+#endif
 
 #if defined(H2645_FILTER_AUD)
 	case H265_NAL_AUD:
