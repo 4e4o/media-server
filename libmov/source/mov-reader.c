@@ -77,8 +77,8 @@ static int mov_index_build(struct mov_track_t* track)
 }
 
 // 8.3.1 Track Box (p31)
-// Box Type : ¡®trak¡¯ 
-// Container : Movie Box(¡®moov¡¯) 
+// Box Type : ï¿½ï¿½trakï¿½ï¿½ 
+// Container : Movie Box(ï¿½ï¿½moovï¿½ï¿½) 
 // Mandatory : Yes 
 // Quantity : One or more
 static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
@@ -149,8 +149,8 @@ static int mov_read_uuid(struct mov_t* mov, const struct mov_box_t* box)
 static int mov_read_moof(struct mov_t* mov, const struct mov_box_t* box)
 {
     // 8.8.7 Track Fragment Header Box (p71)
-    // If base©\data©\offset©\present not provided and if the default©\base©\is©\moof flag is not set, 
-    // the base©\data©\offset for the first track in the movie fragment is the position of 
+    // If baseï¿½\dataï¿½\offsetï¿½\present not provided and if the defaultï¿½\baseï¿½\isï¿½\moof flag is not set, 
+    // the baseï¿½\dataï¿½\offset for the first track in the movie fragment is the position of 
     // the first byte of the enclosing Movie Fragment Box, for second and subsequent track fragments, 
     // the default is the end of the data defined by the preceding track fragment.
 	mov->moof_offset = mov->implicit_offset = mov_buffer_tell(&mov->io) - 8 /*box size */;
@@ -417,6 +417,36 @@ int mov_reader_read(struct mov_reader_t* reader, void* buffer, size_t bytes, mov
 	assert(sample->sample_description_index > 0);
 	onread(param, track->tkhd.track_ID, /*sample->sample_description_index-1,*/ buffer, sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale, sample->flags);
 	return 1;
+}
+
+int mov_reader_read2(mov_reader_t* reader, mov_onalloc onalloc,  mov_reader_onread onread, void* param){
+    struct mov_track_t* track;
+    struct mov_sample_t* sample;
+
+    track = mov_reader_next(reader);
+    if (NULL == track || 0 == track->mdhd.timescale)
+    {
+        return 0; // EOF
+    }
+
+    assert(track->sample_offset < track->sample_count);
+    sample = &track->samples[track->sample_offset];
+
+    void *buffer = onalloc(param,sample->bytes);
+    if (!buffer)
+        return ENOMEM;
+
+    mov_buffer_seek(&reader->mov.io, sample->offset);
+    mov_buffer_read(&reader->mov.io, buffer, sample->bytes);
+    if (mov_buffer_error(&reader->mov.io))
+    {
+        return mov_buffer_error(&reader->mov.io);
+    }
+
+    track->sample_offset++; //mark as read
+    assert(sample->sample_description_index > 0);
+    onread(param, track->tkhd.track_ID, /*sample->sample_description_index-1,*/ buffer, sample->bytes, sample->pts * 1000 / track->mdhd.timescale, sample->dts * 1000 / track->mdhd.timescale, sample->flags);
+    return 1;
 }
 
 int mov_reader_seek(struct mov_reader_t* reader, int64_t* timestamp)

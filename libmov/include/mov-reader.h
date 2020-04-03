@@ -34,6 +34,11 @@ typedef void (*mov_reader_onread)(void* param, uint32_t track, const void* buffe
 /// @return 1-read one frame, 0-EOF, <0-error 
 int mov_reader_read(mov_reader_t* mov, void* buffer, size_t bytes, mov_reader_onread onread, void* param);
 
+/// 开辟内存回调
+typedef void* (*mov_onalloc)(void* param, int bytes);
+/// @return 1-read one frame, 0-EOF, <0-error
+int mov_reader_read2(mov_reader_t* mov, mov_onalloc onalloc,  mov_reader_onread onread, void* param);
+
 /// @param[in,out] timestamp input seek timestamp, output seek location timestamp
 /// @return 0-ok, other-error
 int mov_reader_seek(mov_reader_t* mov, int64_t* timestamp);
