@@ -90,7 +90,7 @@ static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
 	if (0 == r)
 	{
         mov->track->tfdt_dts = 0;
-        if (mov->track->sample_count > 1)
+        if (mov->track->sample_count > 0)
         {
             mov_apply_stco(mov->track);
             mov_apply_elst(mov->track);
