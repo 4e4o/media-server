@@ -90,6 +90,11 @@ int mp3_header_save(const struct mp3_header_t* mp3, void* data, int bytes)
 	return 4;
 }
 
+int mp3_get_channel(const struct mp3_header_t* mp3)
+{
+    return 0x03 == mp3->mode ? 1 : 2;
+}
+
 int mp3_get_bitrate(const struct mp3_header_t* mp3)
 {
 	if (mp3->layer < 1 || mp3->layer > 3)

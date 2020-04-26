@@ -77,8 +77,8 @@ static int mov_index_build(struct mov_track_t* track)
 }
 
 // 8.3.1 Track Box (p31)
-// Box Type : ��trak�� 
-// Container : Movie Box(��moov��) 
+// Box Type : 'trak'
+// Container : Movie Box('moov')
 // Mandatory : Yes 
 // Quantity : One or more
 static int mov_read_trak(struct mov_t* mov, const struct mov_box_t* box)
@@ -186,6 +186,8 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('e', 's', 'd', 's'), MOV_NULL, mov_read_esds }, // ISO/IEC 14496-14:2003(E) mp4a/mp4v/mp4s
 	{ MOV_TAG('f', 'r', 'e', 'e'), MOV_NULL, mov_read_free },
 	{ MOV_TAG('f', 't', 'y', 'p'), MOV_ROOT, mov_read_ftyp },
+	{ MOV_TAG('g', 'm', 'i', 'n'), MOV_GMHD, mov_read_gmin }, // Apple QuickTime gmin
+	{ MOV_TAG('g', 'm', 'h', 'd'), MOV_MINF, mov_read_default }, // Apple QuickTime gmhd
 	{ MOV_TAG('h', 'd', 'l', 'r'), MOV_MDIA, mov_read_hdlr }, // Apple QuickTime minf also has hdlr
 	{ MOV_TAG('h', 'v', 'c', 'C'), MOV_NULL, mov_read_hvcc }, // ISO/IEC 14496-15:2014 hvcC
 	{ MOV_TAG('l', 'e', 'v', 'a'), MOV_MVEX, mov_read_leva },
@@ -202,6 +204,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('m', 'v', 'e', 'x'), MOV_MOOV, mov_read_default },
 	{ MOV_TAG('m', 'v', 'h', 'd'), MOV_MOOV, mov_read_mvhd },
 //	{ MOV_TAG('n', 'm', 'h', 'd'), MOV_MINF, mov_read_default }, // ISO/IEC 14496-12:2015(E) 8.4.5.2 Null Media Header Box (p45)
+	{ MOV_TAG('p', 'a', 's', 'p'), MOV_NULL, mov_read_pasp },
 	{ MOV_TAG('s', 'i', 'd', 'x'), MOV_ROOT, mov_read_sidx },
 	{ MOV_TAG('s', 'k', 'i', 'p'), MOV_NULL, mov_read_free },
 	{ MOV_TAG('s', 'm', 'h', 'd'), MOV_MINF, mov_read_smhd },
@@ -214,6 +217,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('s', 't', 's', 'z'), MOV_STBL, mov_read_stsz },
 	{ MOV_TAG('s', 't', 't', 's'), MOV_STBL, mov_read_stts },
 	{ MOV_TAG('s', 't', 'z', '2'), MOV_STBL, mov_read_stz2 },
+	{ MOV_TAG('t', 'e', 'x', 't'), MOV_GMHD, mov_read_text },
 	{ MOV_TAG('t', 'f', 'd', 't'), MOV_TRAF, mov_read_tfdt },
 	{ MOV_TAG('t', 'f', 'h', 'd'), MOV_TRAF, mov_read_tfhd },
 	{ MOV_TAG('t', 'f', 'r', 'a'), MOV_MFRA, mov_read_tfra },
@@ -300,8 +304,7 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 
 static int mov_reader_init(struct mov_t* mov)
 {
-	int r;
-	size_t i;
+	int i, r;
 	struct mov_box_t box;
 	struct mov_track_t* track;
 
@@ -355,7 +358,7 @@ struct mov_reader_t* mov_reader_create(const struct mov_buffer_t* buffer, void* 
 
 void mov_reader_destroy(struct mov_reader_t* reader)
 {
-	size_t i;
+	int i;
 	for (i = 0; i < reader->mov.track_count; i++)
         mov_free_track(reader->mov.tracks + i);
     if (reader->mov.tracks)
@@ -365,7 +368,7 @@ void mov_reader_destroy(struct mov_reader_t* reader)
 
 static struct mov_track_t* mov_reader_next(struct mov_reader_t* reader)
 {
-	size_t i;
+	int i;
 	int64_t dts, best_dts = 0;
 	struct mov_track_t* track = NULL;
 	struct mov_track_t* track2;
@@ -451,7 +454,7 @@ int mov_reader_read2(mov_reader_t* reader, mov_onalloc onalloc,  mov_reader_onre
 
 int mov_reader_seek(struct mov_reader_t* reader, int64_t* timestamp)
 {
-	size_t i;
+	int i;
 	struct mov_track_t* track;
 
 	// seek video track(s)
@@ -480,7 +483,8 @@ int mov_reader_seek(struct mov_reader_t* reader, int64_t* timestamp)
 
 int mov_reader_getinfo(struct mov_reader_t* reader, struct mov_reader_trackinfo_t *ontrack, void* param)
 {
-	size_t i, j;
+	int i;
+	uint32_t j;
 	struct mov_track_t* track;
     struct mov_sample_entry_t* entry;
 
