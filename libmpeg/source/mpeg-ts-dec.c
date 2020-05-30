@@ -1,5 +1,5 @@
 // ITU-T H.222.0(06/2012)
-// Information technology �C Generic coding of moving pictures and associated audio information: Systems
+// Information technology - Generic coding of moving pictures and associated audio information: Systems
 // 2.4.3.1 Transport stream(p34)
 
 #include "mpeg-ts-proto.h"
@@ -298,7 +298,7 @@ int ts_demuxer_destroy(struct ts_demuxer_t* ts)
 int ts_demuxer_getservice(struct ts_demuxer_t* ts, int program, char* provider, int nprovider, char* name, int nname)
 {
     struct pmt_t* pmt;
-    pmt = pat_find(&ts->pat, program);
+    pmt = pat_find(&ts->pat, (uint16_t)program);
     if(NULL == pmt)
         return -1;
     
