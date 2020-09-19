@@ -386,11 +386,19 @@ void fmp4_writer_destroy(struct fmp4_writer_t* writer)
 	free(writer);
 }
 
-int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags)
+int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags){
+    return fmp4_writer_write_l(writer, idx, data, bytes, pts, dts, flags, 0);
+}
+
+int fmp4_writer_write_l(struct fmp4_writer_t* writer, int idx, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags, int add_nalu_size)
 {
     int64_t duration;
 	struct mov_track_t* track;
 	struct mov_sample_t* sample;
+
+	if(add_nalu_size){
+        bytes += 4;
+	}
 
 	if (idx < 0 || idx >= (int)writer->mov.track_count)
 		return -ENOENT;
@@ -429,7 +437,19 @@ int fmp4_writer_write(struct fmp4_writer_t* writer, int idx, const void* data, s
 	sample->data = malloc(bytes);
 	if (NULL == sample->data)
 		return -ENOMEM;
-	memcpy(sample->data, data, bytes);
+
+    if (!add_nalu_size) {
+        memcpy(sample->data, data, bytes);
+    } else {
+        uint8_t nalu_size_buf[4] = {0};
+        size_t nalu_size = bytes - 4;
+        nalu_size_buf[0] = (uint8_t) ((nalu_size >> 24) & 0xFF);
+        nalu_size_buf[1] = (uint8_t) ((nalu_size >> 16) & 0xFF);
+        nalu_size_buf[2] = (uint8_t) ((nalu_size >> 8) & 0xFF);
+        nalu_size_buf[3] = (uint8_t) ((nalu_size >> 0) & 0xFF);
+        memcpy(sample->data, nalu_size_buf, 4);
+        memcpy(sample->data + 4, data, nalu_size);
+    }
 
     if (INT64_MIN == track->start_dts)
         track->start_dts = sample->dts;

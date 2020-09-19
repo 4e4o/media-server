@@ -34,17 +34,16 @@ int mov_writer_add_subtitle(mov_writer_t* mov, uint8_t object, const void* extra
 /// @return 0-ok, other-error
 int mov_writer_write(mov_writer_t* mov, int track, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags);
 
-/// 跟函数mov_writer_write功能差不多，但是多个with_nalu_size参数
-/// \param writer
-/// \param track
-/// \param data
-/// \param bytes
-/// \param pts
-/// \param dts
-/// \param flags
-/// \param with_nalu_size 头4个字节是否为nalu_size
-/// \return
-int mov_writer_write_l(struct mov_writer_t* writer, int track, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags , int with_nalu_size);
+/// 跟函数mov_writer_write功能差不多，但是不必在数据前面添加NALU size
+/// @param[in] track return by mov_writer_add_audio/mov_writer_add_video
+/// @param[in] data audio/video frame
+/// @param[in] bytes buffer size
+/// @param[in] pts timestamp in millisecond
+/// @param[in] dts timestamp in millisecond
+/// @param[in] flags MOV_AV_FLAG_XXX, such as: MOV_AV_FLAG_KEYFREAME, see more @mov-format.h
+/// @param[in] add_nalu_size 是否需要在数据前面添加4个字节的 NALU size
+/// @return 0-ok, other-error
+int mov_writer_write_l(mov_writer_t* mov, int track, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags , int add_nalu_size);
 
 #ifdef __cplusplus
 }

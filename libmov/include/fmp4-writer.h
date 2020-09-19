@@ -34,6 +34,17 @@ int fmp4_writer_add_subtitle(fmp4_writer_t* fmp4, uint8_t object, const void* ex
 /// @return 0-ok, other-error
 int fmp4_writer_write(fmp4_writer_t* fmp4, int track, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags);
 
+/// 函数fmp4_writer_write功能差不多，但是不必在数据前面添加NALU size
+/// @param[in] track return by mov_writer_add_audio/mov_writer_add_video
+/// @param[in] data audio/video frame
+/// @param[in] bytes buffer size
+/// @param[in] pts timestamp in millisecond
+/// @param[in] dts timestamp in millisecond
+/// @param[in] flags MOV_AV_FLAG_XXX, such as: MOV_AV_FLAG_KEYFREAME, see more @mov-format.h
+/// @param[in] add_nalu_size add_nalu_size 是否需要在数据前面添加4个字节的 NALU size
+/// @return 0-ok, other-error
+int fmp4_writer_write_l(struct fmp4_writer_t* writer, int idx, const void* data, size_t bytes, int64_t pts, int64_t dts, int flags, int add_nalu_size);
+
 /// Save data and open next segment
 /// @return 0-ok, other-error
 int fmp4_writer_save_segment(fmp4_writer_t* fmp4);
