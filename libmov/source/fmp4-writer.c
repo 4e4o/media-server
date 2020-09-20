@@ -448,7 +448,7 @@ int fmp4_writer_write_l(struct fmp4_writer_t* writer, int idx, const void* data,
         nalu_size_buf[2] = (uint8_t) ((nalu_size >> 8) & 0xFF);
         nalu_size_buf[3] = (uint8_t) ((nalu_size >> 0) & 0xFF);
         memcpy(sample->data, nalu_size_buf, 4);
-        memcpy(sample->data + 4, data, nalu_size);
+        memcpy((char *)sample->data + 4, data, nalu_size);
     }
 
     if (INT64_MIN == track->start_dts)
