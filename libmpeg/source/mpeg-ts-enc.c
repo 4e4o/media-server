@@ -390,6 +390,8 @@ int mpeg_ts_destroy(void* ts)
 		mpeg_ts_pmt_destroy(pmt);
 	}
 
+	if (tsctx->pat.pmts && tsctx->pat.pmts != tsctx->pat.pmt_default)
+		free(tsctx->pat.pmts);
 	free(tsctx);
 	return 0;
 }
@@ -410,6 +412,9 @@ int mpeg_ts_add_program(void* ts, uint16_t pn, const void* info, int bytes)
 	struct pmt_t* pmt;
 	mpeg_ts_enc_context_t* tsctx;
 
+	if (pn < 1 || bytes < 0 || bytes >= (1 << 12))
+		return -1; // EINVAL: pminfo-len 12-bits
+
 	tsctx = (mpeg_ts_enc_context_t*)ts;
 	for (i = 0; i < tsctx->pat.pmt_count; i++)
 	{
@@ -418,15 +423,11 @@ int mpeg_ts_add_program(void* ts, uint16_t pn, const void* info, int bytes)
 			return -1; // EEXIST
 	}
 
-	if (i >= sizeof(tsctx->pat.pmts) / sizeof(tsctx->pat.pmts[0]))
+	assert(tsctx->pat.pmt_count == i);
+	pmt = pat_alloc_pmt(&tsctx->pat);
+	if (!pmt)
 		return -1; // E2BIG
 
-	if (pn < 1 || bytes < 0 || bytes >= (1 << 12))
-		return -1; // EINVAL: pminfo-len 12-bits
-
-	assert(tsctx->pat.pmt_count == i);
-	pmt = &tsctx->pat.pmts[tsctx->pat.pmt_count];
-	memset(pmt, 0, sizeof(*pmt));
 	pmt->pid = tsctx->pid++;
 	pmt->pn = pn;
 	pmt->ver = 0x00;
@@ -463,7 +464,7 @@ int mpeg_ts_remove_program(void* ts, uint16_t pn)
 		mpeg_ts_pmt_destroy(pmt);
 
 		if (i + 1 < tsctx->pat.pmt_count)
-			memmove(&tsctx->pat.pmts[i], &tsctx->pat.pmts[i + 1], tsctx->pat.pmt_count - i - 1);
+			memmove(&tsctx->pat.pmts[i], &tsctx->pat.pmts[i + 1], (tsctx->pat.pmt_count - i - 1) * sizeof(tsctx->pat.pmts[0]));
 		tsctx->pat.pmt_count--;
 		mpeg_ts_reset(ts); // update PAT/PMT
 		return 0;
