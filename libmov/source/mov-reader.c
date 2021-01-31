@@ -11,6 +11,8 @@
 
 #define AV_TRACK_TIMEBASE 1000
 
+//#define MOV_READER_BOX_TREE 1
+
 struct mov_reader_t
 {
 	struct mov_t mov;
@@ -204,7 +206,7 @@ static struct mov_parse_t s_mov_parse_table[] = {
 	{ MOV_TAG('m', 'o', 'o', 'f'), MOV_ROOT, mov_read_moof },
 	{ MOV_TAG('m', 'v', 'e', 'x'), MOV_MOOV, mov_read_default },
 	{ MOV_TAG('m', 'v', 'h', 'd'), MOV_MOOV, mov_read_mvhd },
-//	{ MOV_TAG('n', 'm', 'h', 'd'), MOV_MINF, mov_read_default }, // ISO/IEC 14496-12:2015(E) 8.4.5.2 Null Media Header Box (p45)
+	{ MOV_TAG('n', 'm', 'h', 'd'), MOV_MINF, mov_read_nmhd }, // ISO/IEC 14496-12:2015(E) 8.4.5.2 Null Media Header Box (p45)
 	{ MOV_TAG('p', 'a', 's', 'p'), MOV_NULL, mov_read_pasp },
 	{ MOV_TAG('s', 'i', 'd', 'x'), MOV_ROOT, mov_read_sidx },
 	{ MOV_TAG('s', 'k', 'i', 'p'), MOV_NULL, mov_read_free },
@@ -247,6 +249,13 @@ int mov_reader_box(struct mov_t* mov, const struct mov_box_t* parent)
 		uint64_t n = 8;
 		box.size = mov_buffer_r32(&mov->io);
 		box.type = mov_buffer_r32(&mov->io);
+		
+#if defined(MOV_READER_BOX_TREE) && (defined(DEBUG) || defined(_DEBUG))
+		box.level = parent->level + 1;
+		for (i = 0; i < parent->level; i++)
+			printf("\t");
+		printf("%c%c%c%c, size: %d\n", (char)(box.type >> 24), (char)(box.type >> 16), (char)(box.type >> 8), (char)box.type, (int)box.size);
+#endif
 
 		if (1 == box.size)
 		{
@@ -313,6 +322,9 @@ static int mov_reader_init(struct mov_t* mov)
 
 	box.type = MOV_ROOT;
 	box.size = UINT64_MAX;
+#if defined(DEBUG) || defined(_DEBUG)
+	box.level = 0;
+#endif
 	r = mov_reader_box(mov, &box);
 	if (0 != r) return r;
 	
@@ -509,7 +521,8 @@ int mov_reader_getinfo(struct mov_reader_t* reader, struct mov_reader_trackinfo_
 
 			case MOV_SUBT:
 			case MOV_TEXT:
-				if (ontrack->onsubtitle) ontrack->onsubtitle(param, track->tkhd.track_ID, MOV_OBJECT_TEXT, entry->extra_data, entry->extra_data_size);
+			case MOV_SBTL:
+				if (ontrack->onsubtitle) ontrack->onsubtitle(param, track->tkhd.track_ID, entry->object_type_indication, entry->extra_data, entry->extra_data_size);
 				break;
 
 			default:
