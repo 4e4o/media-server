@@ -97,14 +97,14 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
         {
         case PES_SID_PSM:
             n = ps->psm.stream_count;
-            j = psm_read(&ps->psm, data + i, bytes - i);
+            j = psm_read(&ps->psm, data + i, pes_packet_length + 6);
             assert(j == pes_packet_length + 6);
             if (n != ps->psm.stream_count)
                 ps_demuxer_notify(ps); // TODO: check psm stream sid
             break;
 
         case PES_SID_PSD:
-            j = psd_read(&ps->psd, data + i, bytes - i);
+            j = psd_read(&ps->psd, data + i, pes_packet_length + 6);
             assert(j == pes_packet_length + 6);
             break;
 
@@ -136,17 +136,23 @@ static int pes_packet_read(struct ps_demuxer_t *ps, const uint8_t* data, size_t 
 
             assert(PES_SID_END != data[i + 3]);
 			if (ps->pkhd.mpeg2)
-				j = pes_read_header(pes, data + i, bytes - i);
+				j = pes_read_header(pes, data + i, pes_packet_length + 6);
 			else
-				j = pes_read_mpeg1_header(pes, data + i, bytes - i);
+				j = pes_read_mpeg1_header(pes, data + i, pes_packet_length + 6);
 
-			if (0 == j) continue;
+            if (j > 0)
+            {
+                r = pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->start, ps_demuxer_onpes, ps);
+                ps->start = 0; // clear start flag
+                if (0 != r)
+                    return r;
+            }
 
-            r = pes_packet(&pes->pkt, pes, data + i + j, pes_packet_length + 6 - j, ps->start, ps_demuxer_onpes, ps);
-            ps->start = 0; // clear start flag
-            if (0 != r)
-                return r;
+            break;
         }
+
+        if (0 == j)
+            return -1; // invalid data
     }
 
     return i;
